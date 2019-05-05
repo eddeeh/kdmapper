@@ -7,7 +7,7 @@ int main(const int argc, char** argv)
 		std::cout << "[-] Incorrect usage" << std::endl;
 		return -1;
 	}
-	
+
 	const std::string driver_path = argv[1];
 
 	if (!std::filesystem::exists(driver_path))
@@ -15,20 +15,22 @@ int main(const int argc, char** argv)
 		std::cout << "[-] File " << driver_path << " doesn't exist" << std::endl;
 		return -1;
 	}
-	
-	KernelDriverMapper kdmapper;
 
-	if (!kdmapper.Initialize())
+	HANDLE iqvw64e_device_handle = intel_driver::Load();
+
+	if (!iqvw64e_device_handle || iqvw64e_device_handle == INVALID_HANDLE_VALUE)
 	{
-		std::cout << "[-] Failed to initalize kdmapper" << std::endl;
+		std::cout << "[-] Failed to load driver iqvw64e.sys" << std::endl;
 		return -1;
 	}
-	 
-	const uint64_t mapped_driver = kdmapper.MapDriver(driver_path);
-	
-	if (!mapped_driver)
+
+	if (!kdmapper::MapDriver(iqvw64e_device_handle, driver_path))
 	{
 		std::cout << "[-] Failed to map " << driver_path << std::endl;
+		intel_driver::Unload(iqvw64e_device_handle);
 		return -1;
 	}
+
+	intel_driver::Unload(iqvw64e_device_handle);
+	std::cout << "[+] success" << std::endl;
 }
