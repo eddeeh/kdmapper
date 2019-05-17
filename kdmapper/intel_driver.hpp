@@ -114,7 +114,7 @@ namespace intel_driver
 		if (!GetNtGdiDdDDIReclaimAllocations2KernelInfo(device_handle, &kernel_function_ptr, &kernel_original_function_address))
 			return false;
 
-		// Replace the pointer with the address of kernel_function_address
+		// Overwrite the pointer with kernel_function_address
 
 		if (!WriteToReadOnlyMemory(device_handle, kernel_function_ptr, &kernel_function_address, sizeof(kernel_function_address)))
 			return false;
